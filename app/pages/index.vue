@@ -5,6 +5,12 @@ const chatId = crypto.randomUUID()
 
 const { user } = useUserSession()
 
+interface KbArticle {
+  id: string
+  slug: string
+  title: string
+}
+
 const greeting = computed(() => {
   const hour = new Date().getHours()
   let timeGreeting = 'Good evening'
@@ -43,17 +49,17 @@ async function onSubmit() {
   clearFiles()
 }
 
-// Common support intents replace dev-tool prompts
+// pet-shop specific intents
 const quickChats = [
   { label: 'Track my order', icon: 'i-lucide-package' },
-  { label: 'I want to return or exchange an item', icon: 'i-lucide-rotate-ccw' },
-  { label: 'Update my billing information', icon: 'i-lucide-credit-card' },
-  { label: 'Report a problem with my order', icon: 'i-lucide-alert-triangle' },
+  { label: 'Return or exchange an item', icon: 'i-lucide-rotate-ccw' },
+  { label: 'Help me pick food for my pet', icon: 'i-lucide-bone' },
+  { label: 'My order arrived damaged', icon: 'i-lucide-alert-triangle' },
   { label: 'I need to speak with a person', icon: 'i-lucide-headset' }
 ]
 
 // Surfaced help articles — pull from your KB API
-const { data: articles } = await useFetch('/api/kb/popular', { key: 'kb-popular' })
+const { data: articles } = await useFetch<KbArticle[]>('/api/kb/popular', { key: 'kb-popular' })
 </script>
 
 <template>
@@ -72,7 +78,7 @@ const { data: articles } = await useFetch('/api/kb/popular', { key: 'kb-popular'
               {{ greeting }}
             </h1>
             <p class="text-muted mt-1">
-              How can we help you today?
+              How can Customeow help you and your pet today?
             </p>
           </div>
 
@@ -80,7 +86,7 @@ const { data: articles } = await useFetch('/api/kb/popular', { key: 'kb-popular'
             v-model="input"
             :status="loading ? 'streaming' : 'ready'"
             :disabled="uploading"
-            placeholder="Describe your issue, or attach a screenshot..."
+            placeholder="Ask about your order, a product, or your pet..."
             class="[view-transition-name:chat-prompt]"
             variant="subtle"
             :ui="{ base: 'px-1.5' }"
