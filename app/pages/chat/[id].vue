@@ -4,6 +4,7 @@ import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 
 const route = useRoute()
+const { loggedIn } = useUserSession()
 const toast = useToast()
 const { model } = useModels()
 const { csrf, headerName } = useCsrf()
@@ -14,7 +15,7 @@ const { data } = await useFetch(`/api/chats/${route.params.id}`, {
 })
 
 const isOwner = computed(() => data.value?.isOwner ?? false)
-const visibility = ref<'public' | 'private'>(data.value?.visibility ?? 'private')
+// const visibility = ref<'public' | 'private'>(data.value?.visibility ?? 'private')
 const title = ref<string | null>(data.value?.title ?? null)
 
 watch(() => data.value?.title, (next) => {
@@ -162,6 +163,14 @@ async function vote(message: UIMessage, isUpvoted: boolean) {
   }
 }
 
+function handleTalkToHuman() {
+  if (!loggedIn.value) {
+    navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+    return
+  }
+  escalate()
+}
+
 async function escalate() {
   try {
     await $fetch(`/api/chats/${data.value!.id}/escalate`, {
@@ -169,7 +178,7 @@ async function escalate() {
       headers: { [headerName]: csrf }
     })
     if (data.value) data.value.status = 'pending'
-    toast.add({ description: "We've looped in a support agent — they'll join shortly.", icon: 'i-lucide-headset' })
+    toast.add({ description: 'We\'ve looped in a support agent — they\'ll join shortly.', icon: 'i-lucide-headset' })
   } catch {
     toast.add({ description: 'Could not reach an agent right now, please try again.', icon: 'i-lucide-alert-circle', color: 'error' })
   }
@@ -193,7 +202,11 @@ onMounted(() => {
       <!-- template, inside #header, replace ChatVisibility with a status chip + escalate button -->
       <Navbar>
         <template #title>
-          <ChatTitle :chat-id="data!.id" :title="title" :is-owner="isOwner" @update:title="title = $event" />
+          <ChatTitle
+            :chat-id="data!.id"
+            :title="title"
+            :is-owner="isOwner"
+            @update:title="title = $event" />
         </template>
 
         <ChatStatusBadge :status="data?.status ?? 'resolved'" />
@@ -205,7 +218,7 @@ onMounted(() => {
           color="neutral"
           variant="subtle"
           size="sm"
-          @click="escalate"
+          @click="handleTalkToHuman"
         />
       </Navbar>
     </template>
