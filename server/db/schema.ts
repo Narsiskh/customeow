@@ -9,18 +9,17 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   email: text('email').notNull(),
   name: text('name').notNull(),
-  avatar: text('avatar').notNull(),
+  avatar: text('avatar'), // now nullable — credentials users won't have one
   username: text('username').notNull(),
-  provider: text('provider', { enum: ['github'] }).notNull(),
+  passwordHash: text('password_hash'), // null for OAuth-only users
+  role: text('role', { enum: ['customer', 'agent', 'admin'] }).notNull().default('customer'),
+  provider: text('provider', { enum: ['github', 'credentials'] }).notNull(),
   providerId: text('provider_id').notNull(),
   ...timestamps
 }, table => [
-  uniqueIndex('users_provider_id_idx').on(table.provider, table.providerId)
+  uniqueIndex('users_provider_id_idx').on(table.provider, table.providerId),
+  uniqueIndex('users_email_idx').on(table.email)
 ])
-
-export const usersRelations = relations(users, ({ many }) => ({
-  chats: many(chats)
-}))
 
 export const chats = sqliteTable('chats', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -75,5 +74,25 @@ export const votesRelations = relations(votes, ({ one }) => ({
   message: one(messages, {
     fields: [votes.messageId],
     references: [messages.id]
+  })
+}))
+
+export const escalations = sqliteTable('escalations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  requestedBy: text('requested_by').notNull(),
+  reason: text('reason'),
+  assignedAgentId: text('assigned_agent_id'),
+  status: text('status', { enum: ['pending', 'claimed', 'resolved'] }).notNull().default('pending'),
+  ...timestamps
+}, table => [
+  index('escalations_chat_id_idx').on(table.chatId),
+  index('escalations_status_idx').on(table.status)
+])
+
+export const escalationsRelations = relations(escalations, ({ one }) => ({
+  chat: one(chats, {
+    fields: [escalations.chatId],
+    references: [chats.id]
   })
 }))
