@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import type { UIChat } from '~/composables/useChats'
+
+type ChatNavItem = Omit<UIChat, 'icon'> & {
+  icon?: string
+  slot: 'chat'
+  class?: string
+}
 
 const { loggedIn, openInPopup } = useUserSession()
 const { renameChat, deleteChat } = useChatActions()
@@ -13,14 +20,18 @@ const statusMeta = {
   resolved: { color: 'success', label: 'Resolved' }
 } as const
 
+function getStatusMeta(status: ChatStatus) {
+  return statusMeta[status]
+}
+
 const { data: chats, refresh: refreshChats } = await useFetch('/api/chats', {
   key: 'chats',
-  transform: data => data.map(chat => ({
+  transform: data => data.map((chat): UIChat => ({
     id: chat.id,
     label: chat.title || 'New conversation',
     to: `/chat/${chat.id}`,
     icon: 'i-lucide-message-circle',
-    status: chat.status ?? 'resolved', // 'open' | 'pending' | 'resolved'
+    status: chat.status ?? 'open',
     createdAt: chat.createdAt
   }))
 })
@@ -41,7 +52,7 @@ const items = computed(() => groups.value?.flatMap((group) => {
   }))]
 }))
 
-function getChatActions(item: { id: string, label: string }): DropdownMenuItem[][] {
+function getChatActions(item: ChatNavItem): DropdownMenuItem[][] {
   return [[
     { label: 'Rename', icon: 'i-lucide-pencil', onSelect: () => renameChat(item.id, item.label === 'New conversation' ? '' : item.label) }
   ], [
@@ -67,8 +78,8 @@ defineShortcuts({
     >
       <template #header="{ collapsed }">
         <NuxtLink v-if="!collapsed" to="/" class="flex items-end gap-0.5">
-          <Logo class="h-8 w-auto shrink-0" />
-          <span class="text-xl font-bold text-highlighted">Support</span>
+          <Logo class="shrink-0 -m-1" />
+          <span class="text-xl font-bold text-highlighted">CustoMeow</span>
         </NuxtLink>
         <UDashboardSidebarCollapse class="ms-auto" />
       </template>
@@ -120,16 +131,13 @@ defineShortcuts({
           <template #chat-leading="{ item }">
             <span
               class="size-1.5 rounded-full shrink-0 mr-1.5"
-              :class="`bg-${statusMeta[(item as any).status].color}-500`"
-              :title="statusMeta[(item as any).status].label"
+              :class="`bg-${getStatusMeta((item as ChatNavItem).status).color}-500`"
+              :title="getStatusMeta((item as ChatNavItem).status).label"
             />
           </template>
 
           <template #chat-trailing="{ item }">
-            <UDropdownMenu
-              :items="getChatActions(item as { id: string, label: string })"
-              :content="{ align: 'end' }"
-            >
+            <UDropdownMenu :items="getChatActions(item as ChatNavItem)" :content="{ align: 'end' }">
               <UButton
                 as="div"
                 icon="i-lucide-ellipsis"
@@ -150,12 +158,12 @@ defineShortcuts({
         <UserMenu v-if="loggedIn" :collapsed="collapsed" />
         <UButton
           v-else
-          :label="collapsed ? '' : 'Sign in'"
+          :label="collapsed ? '' : 'Log in'"
           icon="i-lucide-log-in"
           color="neutral"
           variant="ghost"
           class="w-full"
-          @click="openInPopup('/auth/github')"
+          to="/login"
         />
       </template>
     </UDashboardSidebar>
