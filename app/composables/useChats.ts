@@ -1,9 +1,13 @@
 import { isToday, isYesterday, subMonths } from 'date-fns'
 
+export type ChatStatus = 'open' | 'pending' | 'resolved'
+
 export interface UIChat {
   id: string
   label: string
   icon: string
+  to: string
+  status: ChatStatus
   createdAt: string
 }
 
