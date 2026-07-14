@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Chat } from '@ai-sdk/vue'
 import { DefaultChatTransport } from 'ai'
-import type { UIMessage } from 'ai'
+import type { AppUIMessage } from '~/types/chat'
 import { useIntervalFn } from '@vueuse/core'
 
 type ChatStatus = 'open' | 'pending' | 'resolved'
@@ -15,11 +15,11 @@ interface DbMessage {
   isAgentReply: boolean
 }
 
-function toUIMessage(m: DbMessage): UIMessage {
+function toUIMessage(m: DbMessage): AppUIMessage {
   return {
     id: m.id,
     role: m.role,
-    parts: (m.parts ?? []) as UIMessage['parts'],
+    parts: (m.parts ?? []) as AppUIMessage['parts'],
     metadata: m.isAgentReply ? { isAgentReply: true } : undefined
   }
 }
@@ -60,7 +60,7 @@ const { data: votes } = await useLazyFetch(`/api/chats/${route.params.id}/votes`
 
 const input = ref('')
 
-const chat = new Chat({
+const chat = new Chat<AppUIMessage>({
   id: data.value?.id,
   messages: (data.value?.messages ?? []).map(toUIMessage),
   transport: new DefaultChatTransport({
@@ -137,13 +137,13 @@ async function handleSubmit(e: Event) {
 
 const editingMessageId = ref<string | null>(null)
 
-function startEdit(message: UIMessage) {
+function startEdit(message: AppUIMessage) {
   if (editingMessageId.value) return
 
   editingMessageId.value = message.id
 }
 
-async function saveEdit(message: UIMessage, text: string) {
+async function saveEdit(message: AppUIMessage, text: string) {
   try {
     await $fetch(`/api/chats/${data.value!.id}/messages`, {
       method: 'DELETE',
@@ -159,7 +159,7 @@ async function saveEdit(message: UIMessage, text: string) {
   chat.sendMessage({ text, messageId: message.id })
 }
 
-async function regenerateMessage(message: UIMessage) {
+async function regenerateMessage(message: AppUIMessage) {
   try {
     await $fetch(`/api/chats/${data.value!.id}/messages`, {
       method: 'DELETE',
@@ -180,7 +180,7 @@ function getVote(messageId: string) {
   return !!vote.isUpvoted
 }
 
-async function vote(message: UIMessage, isUpvoted: boolean) {
+async function vote(message: AppUIMessage, isUpvoted: boolean) {
   const snapshot = (votes.value ?? []).map(v => ({ ...v }))
   const toggling = getVote(message.id) === isUpvoted
   const next = toggling ? null : isUpvoted
