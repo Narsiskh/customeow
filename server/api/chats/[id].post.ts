@@ -23,10 +23,9 @@ export default defineEventHandler(async (event) => {
     id: z.string()
   }).parse)
 
-  const { model, messages } = await readValidatedBody(event, z.object({
-    model: z.string().refine(value => MODELS.some(m => m.value === value), {
-      message: 'Invalid model'
-    }),
+  const model = 'gpt-4o'
+
+  const { messages } = await readValidatedBody(event, z.object({
     messages: z.array(z.custom<UIMessage>())
   }).parse)
 
