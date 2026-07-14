@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
-import type { UIMessage } from 'ai'
 import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
+import type { AppUIMessage } from '~/types/chat'
 
 type KnowledgeBaseUIToolInvocation = {
   output?: {
@@ -15,12 +15,14 @@ type KnowledgeBaseUIToolInvocation = {
 }
 
 defineProps<{
-  message: UIMessage
+  message: AppUIMessage
   editing: boolean
 }>()
 
+type MessageWithId = { id: string }
+
 const emit = defineEmits<{
-  save: [message: UIMessage, text: string]
+  save: [message: MessageWithId, text: string]
   cancelEdit: []
 }>()
 </script>
@@ -64,8 +66,14 @@ const emit = defineEmits<{
     </template>
 
     <template v-else-if="isTextUIPart(part)">
+      <template v-if="message.role === 'assistant' && !message.metadata?.isAgentReply">
+        <ChatComark
+          :markdown="part.text"
+          :streaming="isPartStreaming(part)"
+        />
+      </template>
       <UPageCard
-        v-if="message.metadata."
+        v-if="message.metadata?.isAgentReply"
         class="w-full"
         spotlight
         spotlight-color="warning"
@@ -78,12 +86,6 @@ const emit = defineEmits<{
           />
         </template>
       </UPageCard>
-      <template v-else-if="message.role === 'assistant'">
-        <ChatComark
-          :markdown="part.text"
-          :streaming="isPartStreaming(part)"
-        />
-      </template>
       <template v-else-if="message.role === 'user'">
         <ChatMessageEdit
           v-if="editing"
