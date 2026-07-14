@@ -97,6 +97,10 @@ defineShortcuts({
             kbds: ['meta', 'k'],
             onSelect: () => { searchOpen = true }
           }, {
+            label: 'Requests',
+            icon: 'i-lucide-message-circle',
+            to: '/admin/escalations'
+          }, {
             label: 'Help center',
             icon: 'i-lucide-book-open',
             to: '/help'
