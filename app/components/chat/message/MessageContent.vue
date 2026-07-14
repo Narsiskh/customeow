@@ -3,6 +3,17 @@ import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import type { UIMessage } from 'ai'
 import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
 
+type KnowledgeBaseUIToolInvocation = {
+  output?: {
+    articles: {
+      id: string
+      title: string
+      slug: string
+      excerpt: string
+    }[]
+  }
+}
+
 defineProps<{
   message: UIMessage
   editing: boolean
@@ -53,11 +64,26 @@ const emit = defineEmits<{
     </template>
 
     <template v-else-if="isTextUIPart(part)">
-      <ChatComark
-        v-if="message.role === 'assistant'"
-        :markdown="part.text"
-        :streaming="isPartStreaming(part)"
-      />
+      <UPageCard
+        v-if="message.metadata."
+        class="w-full"
+        spotlight
+        spotlight-color="warning"
+        title="Admin reply"
+      >
+        <template #description>
+          <ChatComark
+            :markdown="part.text"
+            :streaming="isPartStreaming(part)"
+          />
+        </template>
+      </UPageCard>
+      <template v-else-if="message.role === 'assistant'">
+        <ChatComark
+          :markdown="part.text"
+          :streaming="isPartStreaming(part)"
+        />
+      </template>
       <template v-else-if="message.role === 'user'">
         <ChatMessageEdit
           v-if="editing"
