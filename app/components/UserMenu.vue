@@ -91,40 +91,9 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     }
   }]
 }], [{
-  label: 'Templates',
-  icon: 'i-lucide-layout-template',
-  children: [{
-    label: 'Docs',
-    to: 'https://docs-template.nuxt.dev/'
-  }, {
-    label: 'Chat',
-    to: 'https://chat-template.nuxt.dev/',
-    color: 'primary',
-    checked: true,
-    type: 'checkbox'
-  }, {
-    label: 'Portfolio',
-    to: 'https://portfolio-template.nuxt.dev/'
-  }, {
-    label: 'Changelog',
-    to: 'https://changelog-template.nuxt.dev/'
-  }]
-}], [{
-  label: 'Documentation',
-  icon: 'i-lucide-book-open',
-  to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-  target: '_blank'
-}],[{
-  label: 'Help center',
-  icon: 'i-lucide-book-open',
-  to: '/help'
-}, {
-  label: 'Contact support',
-  icon: 'i-lucide-mail',
-  to: '/contact'
-}], [{
   label: 'Log out',
   icon: 'i-lucide-log-out',
+  // eslint-disable-next-line @stylistic/max-statements-per-line
   onSelect() { clear(); navigateTo('/') }
 }]]))
 </script>
