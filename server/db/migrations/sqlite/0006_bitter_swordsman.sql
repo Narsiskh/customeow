@@ -1,0 +1,1 @@
+ALTER TABLE `messages` ADD `is_agent_reply` integer DEFAULT false NOT NULL;
