@@ -2,6 +2,27 @@
 import { Chat } from '@ai-sdk/vue'
 import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
+import { useIntervalFn } from '@vueuse/core'
+
+type ChatStatus = 'open' | 'pending' | 'resolved'
+
+interface DbMessage {
+  id: string
+  chatId: string
+  createdAt: string | Date
+  role: 'user' | 'assistant' | 'system'
+  parts: unknown
+  isAgentReply: boolean
+}
+
+function toUIMessage(m: DbMessage): UIMessage {
+  return {
+    id: m.id,
+    role: m.role,
+    parts: (m.parts ?? []) as UIMessage['parts'],
+    metadata: m.isAgentReply ? { isAgentReply: true } : undefined
+  }
+}
 
 const route = useRoute()
 const { loggedIn } = useUserSession()
@@ -41,7 +62,7 @@ const input = ref('')
 
 const chat = new Chat({
   id: data.value?.id,
-  messages: data.value?.messages,
+  messages: (data.value?.messages ?? []).map(toUIMessage),
   transport: new DefaultChatTransport({
     api: `/api/chats/${data.value?.id}`,
     headers: { [headerName]: csrf },
@@ -77,6 +98,30 @@ const chat = new Chat({
     })
   }
 })
+
+const { pause: pauseAgentPoll } = useIntervalFn(async () => {
+  if (data.value?.status !== 'pending') return
+
+  try {
+    const fresh = await $fetch<{ status: ChatStatus, messages: DbMessage[] }>(`/api/chats/${data.value!.id}`)
+    const existingIds = new Set(chat.messages.map(m => m.id))
+    const agentReplies = fresh.messages.filter(
+      m => !existingIds.has(m.id) && m.isAgentReply
+    )
+
+    if (agentReplies.length) {
+      chat.messages = [...chat.messages, ...agentReplies.map(toUIMessage)]
+    }
+
+    if (data.value && fresh.status !== data.value.status) {
+      data.value.status = fresh.status
+    }
+  } catch {
+    // silent — don't toast-spam on background polling failures
+  }
+}, 4000)
+
+onUnmounted(() => pauseAgentPoll())
 
 async function handleSubmit(e: Event) {
   e.preventDefault()
