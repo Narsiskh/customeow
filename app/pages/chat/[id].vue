@@ -27,7 +27,6 @@ function toUIMessage(m: DbMessage): AppUIMessage {
 const route = useRoute()
 const { loggedIn } = useUserSession()
 const toast = useToast()
-const { model } = useModels()
 const { csrf, headerName } = useCsrf()
 
 const { data } = await useFetch(`/api/chats/${route.params.id}`, {
@@ -65,10 +64,7 @@ const chat = new Chat<AppUIMessage>({
   messages: (data.value?.messages ?? []).map(toUIMessage),
   transport: new DefaultChatTransport({
     api: `/api/chats/${data.value?.id}`,
-    headers: { [headerName]: csrf },
-    body: {
-      model: model.value
-    }
+    headers: { [headerName]: csrf }
   }),
   onData: async (dataPart) => {
     if (dataPart.type === 'data-chat-title') {
@@ -137,13 +133,15 @@ async function handleSubmit(e: Event) {
 
 const editingMessageId = ref<string | null>(null)
 
-function startEdit(message: AppUIMessage) {
+type MessageWithId = { id: string }
+
+function startEdit(message: MessageWithId) {
   if (editingMessageId.value) return
 
   editingMessageId.value = message.id
 }
 
-async function saveEdit(message: AppUIMessage, text: string) {
+async function saveEdit(message: MessageWithId, text: string) {
   try {
     await $fetch(`/api/chats/${data.value!.id}/messages`, {
       method: 'DELETE',
@@ -159,7 +157,7 @@ async function saveEdit(message: AppUIMessage, text: string) {
   chat.sendMessage({ text, messageId: message.id })
 }
 
-async function regenerateMessage(message: AppUIMessage) {
+async function regenerateMessage(message: MessageWithId) {
   try {
     await $fetch(`/api/chats/${data.value!.id}/messages`, {
       method: 'DELETE',
@@ -180,7 +178,7 @@ function getVote(messageId: string) {
   return !!vote.isUpvoted
 }
 
-async function vote(message: AppUIMessage, isUpvoted: boolean) {
+async function vote(message: MessageWithId, isUpvoted: boolean) {
   const snapshot = (votes.value ?? []).map(v => ({ ...v }))
   const toggling = getVote(message.id) === isUpvoted
   const next = toggling ? null : isUpvoted
@@ -338,8 +336,6 @@ onMounted(() => {
             <template #footer>
               <div class="flex items-center gap-1">
                 <ChatFileUploadButton :open="open" />
-
-                <ModelSelect />
               </div>
 
               <UChatPromptSubmit
