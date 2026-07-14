@@ -43,6 +43,13 @@
       "when": 1783966830731,
       "tag": "0005_low_master_mold",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1783971369668,
+      "tag": "0006_bitter_swordsman",
+      "breakpoints": true
     }
   ]
 }
